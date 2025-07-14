@@ -1,0 +1,11 @@
+{
+  "successful": true,
+  "result": {
+    "capturedLists": {
+      "default": [
+        {"price": 25000, "route": "LHR to JFK"},
+        {"price": 18000, "route": "LAX to MIA"}
+      ]
+    }
+  }
+} 

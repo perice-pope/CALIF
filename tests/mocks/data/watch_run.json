@@ -1,0 +1,11 @@
+{
+  "successful": true,
+  "result": {
+    "capturedLists": {
+      "default": [
+        {"price": 15000, "model": "Rolex Submariner"},
+        {"price": 8000, "model": "Omega Speedmaster"}
+      ]
+    }
+  }
+} 

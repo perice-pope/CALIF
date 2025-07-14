@@ -1,0 +1,11 @@
+{
+  "successful": true,
+  "result": {
+    "capturedLists": {
+      "default": [
+        {"price": 1200, "name": "Château Lafite Rothschild 2018"},
+        {"price": 850, "name": "Domaine de la Romanée-Conti 2017"}
+      ]
+    }
+  }
+} 

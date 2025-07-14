@@ -1,0 +1,94 @@
+steps:
+  # 1. Build and push the API image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/api:latest'
+      - '--file=api/Dockerfile'
+      - '.'
+    id: 'build-api'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/api:latest']
+    id: 'push-api'
+
+  # 2. Build and push the Analytics image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/analytics:latest'
+      - '--file=analytics/Dockerfile'
+      - '.'
+    id: 'build-analytics'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/analytics:latest']
+    id: 'push-analytics'
+
+  # 3. Build and push the Slack Bot image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/slack-bot:latest'
+      - '--file=slack_bot/Dockerfile'
+      - '.'
+    id: 'build-slack-bot'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/slack-bot:latest']
+    id: 'push-slack-bot'
+
+  # 4. Deploy services
+  # Note: The Terraform approach is to manage infrastructure separately from the app build pipeline.
+  # However, you can update services here after images are pushed.
+
+  # Update Cloud Run service with the new image
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'services'
+      - 'update'
+      - 'calif-api'
+      - '--image=${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/api:latest'
+      - '--region=${_GCP_REGION}'
+      - '--quiet'
+    id: 'deploy-api'
+    waitFor: ['push-api']
+
+  # Update Cloud Function for analytics
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'functions'
+      - 'deploy'
+      - 'calif-analytics'
+      - '--gen2'
+      - '--source=.'
+      - '--entry-point=process_signals'
+      - '--runtime=python311'
+      - '--region=${_GCP_REGION}'
+      - '--trigger-http'
+      - '--no-allow-unauthenticated'
+      - '--docker-registry=artifact-registry'
+      - '--docker-repository=${_REPO_NAME}' # This seems to be a new feature, might need adjustment
+      # The above is a simplified version. A more robust way is to use the image URL directly
+      # if the gcloud command supports it fully for function updates.
+      # A common pattern is to upload source to GCS and deploy from there.
+    id: 'deploy-analytics'
+    waitFor: ['push-analytics']
+
+substitutions:
+  _GCP_REGION: 'us-central1'
+  _REPO_NAME: 'calif-services'
+
+images:
+  - '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/api:latest'
+  - '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/analytics:latest'
+  - '${_GCP_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO_NAME}/slack-bot:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY 
