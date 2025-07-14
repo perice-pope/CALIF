@@ -7,7 +7,6 @@ from flask import Request, jsonify
 from google.cloud import bigquery
 from sqlalchemy import create_engine, text
 
-
 load_dotenv()
 
 # --- Configuration ---
