@@ -147,3 +147,5 @@ docker-compose.override.yml
 .vscode/
 *.swp
 *~
+
+cursorkleosr-agent/
