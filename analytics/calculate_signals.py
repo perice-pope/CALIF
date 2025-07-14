@@ -1,11 +1,12 @@
 import os
-import pandas as pd
-import sqlalchemy
-from sqlalchemy import create_engine, text
-from google.cloud import bigquery
-from dotenv import load_dotenv
+
 import functions_framework
+import pandas as pd
+from dotenv import load_dotenv
 from flask import Request, jsonify
+from google.cloud import bigquery
+from sqlalchemy import create_engine, text
+
 
 load_dotenv()
 
@@ -142,4 +143,4 @@ if __name__ == '__main__':
     # You would need to have BigQuery and Postgres credentials set up locally.
     # e.g., using `gcloud auth application-default login`
     # and having a .env file with POSTGRES_DB_URL
-    process_signals(Request(environ={"REQUEST_METHOD": "POST"})) 
+    process_signals(Request(environ={"REQUEST_METHOD": "POST"}))

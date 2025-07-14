@@ -1,16 +1,14 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
+from datetime import datetime
 from typing import List
+
 import uvicorn
+from fastapi import Depends, FastAPI, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 # It's good practice to have database session management in a separate file.
 from . import database
-from .database import engine, SessionLocal
-
-# Import your models here when you have them.
-# For now, we define Pydantic models directly.
-from pydantic import BaseModel, Field
-from datetime import datetime
+from .database import SessionLocal
 
 # Create all tables in the database.
 # This is okay for development, but for production, you might want to use Alembic for migrations.
@@ -58,7 +56,7 @@ def read_root():
     return {"message": "Welcome to the CALIF API"}
 
 @app.get("/signals", response_model=List[Signal])
-def get_signals(db: Session = Depends(get_db)):
+def get_signals(db: Session = Depends(get_db)):  # noqa: B008
     """
     Retrieve all the latest deal signals from the database.
     """
@@ -70,11 +68,11 @@ def get_signals(db: Session = Depends(get_db)):
         return results
     except Exception as e:
         # This will catch issues like "relation 'signals' does not exist" if the table isn't created.
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.get("/index", response_model=List[Index])
-def get_index(db: Session = Depends(get_db)):
+def get_index(db: Session = Depends(get_db)):  # noqa: B008
     """
     Retrieve the computed indices.
     (This is a placeholder and needs a corresponding table and logic).
@@ -90,4 +88,4 @@ def get_index(db: Session = Depends(get_db)):
 
 # To run locally for development: `uvicorn api.app:app --reload`
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    uvicorn.run(app, host="0.0.0.0", port=8000)

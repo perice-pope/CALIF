@@ -1,12 +1,11 @@
 import os
-import json
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
 
 import requests
+from dotenv import load_dotenv
 from google.cloud import bigquery
 from pydantic import BaseModel, Field, ValidationError
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -129,4 +128,4 @@ def main():
     print("CALIF data ingestion finished.")
 
 if __name__ == "__main__":
-    main() 
+    main()

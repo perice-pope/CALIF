@@ -1,0 +1,18 @@
+# Use the same base image as our services for consistency
+FROM python:3.11-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy requirements and install them
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the entire project context into the container
+COPY . .
+
+# Set the python path to include the root directory
+ENV PYTHONPATH=/app
+
+# Default command to run pytest
+CMD ["pytest"] 

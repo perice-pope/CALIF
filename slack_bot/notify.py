@@ -1,11 +1,13 @@
-import os
-import json
 import base64
+import json
+import os
+from typing import Optional
+
+import functions_framework
+from dotenv import load_dotenv
+from flask import Request, jsonify
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
-from dotenv import load_dotenv
-import functions_framework
-from flask import Request, jsonify
 
 load_dotenv()
 
@@ -15,7 +17,7 @@ SLACK_CHANNEL = os.getenv("SLACK_CHANNEL", "#general")
 
 # Initialize Slack client
 try:
-    slack_client = WebClient(token=SLACK_BOT_TOKEN)
+    slack_client: Optional[WebClient] = WebClient(token=SLACK_BOT_TOKEN) if SLACK_BOT_TOKEN else None
 except Exception as e:
     print(f"Error initializing Slack client: {e}")
     slack_client = None
@@ -63,7 +65,7 @@ def notify_slack(request: Request):
         return "Bad Request: Invalid Pub/Sub message format", 400
 
     pubsub_message = envelope["message"]
-    
+
     # The actual data is Base64-encoded in the 'data' field.
     if "data" in pubsub_message:
         try:
@@ -74,13 +76,13 @@ def notify_slack(request: Request):
 
             # Check if it's a deal worth notifying about
             if signal_data.get("is_deal"):
-                if not slack_client or not SLACK_BOT_TOKEN:
+                if not slack_client:
                     raise ValueError("Slack client is not initialized. Check SLACK_BOT_TOKEN.")
 
                 message_blocks = format_slack_message(signal_data)
-                
+
                 try:
-                    response = slack_client.chat_postMessage(
+                    slack_client.chat_postMessage(
                         channel=SLACK_CHANNEL,
                         text=f"New Deal Signal: {signal_data.get('asset_type')}", # Fallback text
                         blocks=message_blocks
@@ -100,5 +102,5 @@ def notify_slack(request: Request):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
             return "Internal Server Error", 500
-            
-    return "OK", 204 
+
+    return "OK", 204

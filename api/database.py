@@ -1,8 +1,9 @@
 import os
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -21,4 +22,4 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # Export text for raw queries
-__all__ = ["engine", "SessionLocal", "Base", "text"] 
+__all__ = ["engine", "SessionLocal", "Base", "text"]

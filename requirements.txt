@@ -9,8 +9,8 @@ google-cloud-bigquery
 # Analytics
 pandas
 sqlalchemy
-psycopg2-binary
-google-cloud-functions-framework
+psycopg2-binary==2.9.9
+functions-framework==3.* # Correct package name
 flask
 
 # API
@@ -26,4 +26,9 @@ altair
 
 # Testing
 pytest
-numpy 
+numpy
+mypy
+pandas-stubs
+types-requests
+types-psycopg2
+ruff 

@@ -1,9 +1,10 @@
 import os
-import streamlit as st
-import pandas as pd
-from sqlalchemy import create_engine
-from dotenv import load_dotenv
+
 import altair as alt
+import pandas as pd
+import streamlit as st
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
 
 load_dotenv()
 
@@ -77,7 +78,7 @@ def main():
             # Bar chart of deals by asset type
             deal_counts = signals_df['asset_type'].value_counts().reset_index()
             deal_counts.columns = ['asset_type', 'count']
-            
+
             bar_chart = alt.Chart(deal_counts).mark_bar().encode(
                 x=alt.X('asset_type:N', title='Asset Type'),
                 y=alt.Y('count:Q', title='Number of Deals'),
@@ -85,7 +86,7 @@ def main():
             ).properties(
                 title='Deals by Asset Type'
             )
-            
+
             # Scatter plot of Z-score vs. price
             scatter_plot = alt.Chart(signals_df).mark_circle(size=60).encode(
                 x=alt.X('last_price:Q', title='Last Price', scale=alt.Scale(zero=False)),
@@ -95,12 +96,12 @@ def main():
             ).properties(
                 title='Z-Score vs. Price for Active Deals'
             )
-            
+
             st.altair_chart(bar_chart, use_container_width=True)
             st.altair_chart(scatter_plot, use_container_width=True)
-        
+
     else:
         st.info("No active deal signals found. Check back later!")
 
 if __name__ == "__main__":
-    main() 
+    main()
