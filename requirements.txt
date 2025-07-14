@@ -1,0 +1,29 @@
+# Common
+python-dotenv
+pydantic==2.*
+requests
+
+# Data Ingestion
+google-cloud-bigquery
+
+# Analytics
+pandas
+sqlalchemy
+psycopg2-binary
+google-cloud-functions-framework
+flask
+
+# API
+fastapi
+uvicorn[standard]
+
+# Slack Bot
+slack_sdk
+
+# Dashboard
+streamlit
+altair
+
+# Testing
+pytest
+numpy 

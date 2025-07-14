@@ -1,117 +1,188 @@
-# An Autonomous AI Workflow for Cursor IDE
+# 💎 CALIF: Cross-Asset Luxury Investment Feed
 
-<div align="center">
-  <img src="https://i.ibb.co/tMy2cRkC/image-fx.png" alt="Project Rules Logo" width="400"/>
-  <p><em>A simple, autonomous system for AI-assisted development in Cursor. Now with iterative processing!</em></p>
-</div>
+CALIF is a containerized, cloud-native monorepo for ingesting, analyzing, and delivering investment signals on luxury assets like watches, fine wine, and private jets. It leverages a modern data stack on Google Cloud Platform, with Infrastructure-as-Code managed by Terraform.
 
-## What is this?
+## 🏛️ Architecture
 
-This project provides a streamlined way to work with AI assistants (like Claude or GPT-4) inside the Cursor IDE, making development more autonomous and consistent. It helps the AI remember project context and follow a structured process, even across different sessions. Think of it as giving your AI assistant a reliable memory and a clear playbook.  This system now supports iterative processing of lists of items, enhancing its capabilities for complex tasks.
-
-This setup is inspired by the ideas in the original `kleosr/cursorkleosr` repository but simplifies it drastically for better autonomy and lower overhead.
-
-## Thanks to
-
-*   @atalas [Atalas Cursor IDE Profile](https://forum.cursor.com/u/atalas) <img src="https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light/cursor.png" width="16" height="16" alt="Cursor Icon" style="vertical-align: middle; margin-left: 5px;" />
-*   @Guayusa [Guayusa Cursor IDE Profile](https://forum.cursor.com/u/Guayusa) <img src="https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light/cursor.png" width="16" height="16" alt="Cursor Icon" style="vertical-align: middle; margin-left: 5px;" />
-*   @stevejb [Stevejb Cursor IDE Profile](https://forum.cursor.com/u/stevejb) <img src="https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light/cursor.png" width="16" height="16" alt="Cursor Icon" style="vertical-align: middle; margin-left: 5px;" />
-*   @AaronAgility [AaronAgility Cursor IDE Profile](https://forum.cursor.com/u/AaronAgility/summary) <img src="https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light/cursor.png" width="16" height="16" alt="Cursor Icon" style="vertical-align: middle; margin-left: 5px;" />
-*   @davesienk [davesienk Cursor IDE Profile](https://forum.cursor.com/u/davesienk/profile-hidden) <img src="https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light/cursor.png" width="16" height="16" alt="Cursor Icon" style="vertical-align: middle; margin-left: 5px;" />
-*   @Marlon [Marlon Cursor IDE Profile](https://forum.cursor.com/u/Marlon) <img src="https://registry.npmmirror.com/@lobehub/icons-static-png/latest/files/light/cursor.png" width="16" height="16" alt="Cursor Icon" style="vertical-align: middle; margin-left: 5px;" />
-*   Contributors to the original `kleosr/cursorkleosr` concepts.
-
-## How it Works: The Two-File System
-
-Instead of many complex rule files, this system uses just two core Markdown files:
-
-1.  **`project_config.md` (Long-Term Memory - LTM):**
-    *   **Purpose:** Holds the stable, essential information about your project.
-    *   **Content:** Project goals, main technologies, critical coding patterns/conventions, key constraints, and now, tokenization settings (e.g., characters per token for estimation).
-    *   **Usage:** The AI reads this at the start of major tasks to understand the project's foundation. It's updated infrequently.
-
-2.  **`workflow_state.md` (Short-Term Memory + Rules + Log - STM):**
-    *   **Purpose:** The dynamic heart of the system. Tracks the current work session.
-    *   **Content:**
-        *   `## State`: Current phase (Analyze, Blueprint, etc.), status (Ready, Blocked, etc.), `CurrentItem` (for iteration).
-        *   `## Plan`: The step-by-step plan for the current task (created in Blueprint phase).
-        *   `## Rules`: **All the operational rules** defining the workflow phases, memory updates, tool use, error handling, iteration logic, and blueprint versioning.
-        *   `## Log`: A running log of actions, tool outputs, and decisions made during the session.
-        *   `## Items`: A list of items to be processed iteratively (table format).
-        *   `## TokenizationResults`: Stores results (summary, token count) for each processed item.
-        *   `## Blueprint History`: **NEW:** Automatically archives previous blueprint versions with timestamps and unique IDs to prevent loss of planning work.
-    *   **Usage:** The AI reads this file **constantly** before acting and updates it **immediately** after acting. This is how it maintains context and follows the process.
-
-
-## The Autonomous Loop
-
-The AI operates in a continuous cycle, driven by the `workflow_state.md` file:
+The system is composed of several microservices, all containerized with Docker and orchestrated on GCP.
 
 ```mermaid
-graph LR
-    A[Start] --> B{Read workflow_state.md};
-    B --> C{State.Status == READY and CurrentItem == null?};
-    C -- Yes --> D[Trigger RULE_ITERATE_01];
-    C -- No --> E{Proceed with current workflow};
-    E --> F[Execute current step];
-    F --> G[Update workflow_state.md];
-    G --> H{Phase == VALIDATE?};
-    H -- Yes --> I[Trigger RULE_ITERATE_01];
-    H -- No --> E;
-    D --> J{More items in list?};
-    J -- Yes --> K[Set CurrentItem to next item];
-    K --> L[Clear ## Log];
-    L --> M[Reset State.Phase and State.Status];
-    M --> B;
-    J -- No --> N[Set State.Status = COMPLETED_ITERATION];
-    N --> O[End];
+graph TD
+    subgraph "Data Acquisition"
+        A[Browse AI Robots] -->|REST API Call| B(data_ingest);
+    end
+
+    subgraph "Storage"
+        B --> C[BigQuery: calif_raw];
+        D[Postgres: signals]
+    end
+
+    subgraph "Analytics"
+        C -->|Loads data| E(Analytics Cloud Function);
+        E -->|Calculates signals| D;
+    end
+    
+    subgraph "Delivery & Presentation"
+        D --> F[API on Cloud Run];
+        D --> G[Streamlit Dashboard];
+        D -- Pub/Sub --> H[Slack Bot Cloud Function];
+        F --> I{End User};
+        G --> I;
+        H --> J[Slack Channel];
+    end
+
+    subgraph "Triggers"
+        K[Cloud Scheduler] -->|Nightly| E;
+    end
+
+    subgraph "CI/CD"
+        L[GitHub] -->|Push to main| M[Cloud Build];
+        M --> N[Artifact Registry];
+        N --> F;
+        N --> E;
+        N --> H;
+    end
 ```
 
-**In simple terms:** The AI reads the state, interprets rules, decides what to do, acts via Cursor, observes the result, updates the state, and repeats.  The new iteration feature adds a loop within this main loop, processing items one by one, clearing context between each.
+## 🚀 Quick Start (Local Development)
 
-## The Workflow Phases (Defined in `workflow_state.md`)
+This project uses `docker-compose` to spin up a complete local development environment.
 
-The `## Rules` section defines a simple, structured workflow:
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/perice-pope/CALIF.git
+    cd CALIF
+    ```
 
-1.  **[PHASE: ANALYZE]:** Understand the task and context. No coding or planning solutions yet.
-2.  **[PHASE: BLUEPRINT]:** Create a detailed, step-by-step plan for implementation. No coding yet.
-3.  **[PHASE: CONSTRUCT]:** Execute the plan precisely, using Cursor tools. Handle errors based on rules.  This phase now includes iterative processing of items from the `## Items` section.
-4.  **[PHASE: VALIDATE]:** Run tests and checks to ensure the implementation matches the plan and requirements.
+2.  **Create your environment file:**
+    Copy the example environment file and fill in the required values.
+    ```bash
+    cp .env.example .env
+    ```
+    You will need to populate `your-gcp-project-id`, `your-browse-ai-api-key`, and your slack token. The `POSTGRES_DB_URL` is already configured for the local docker network.
 
-The AI follows the constraints of the current phase, guided by the rules in `workflow_state.md`.
+3.  **Create a `.env.example` file with the following content:**
+    ```
+    # --- GCP Configuration ---
+    GCP_PROJECT_ID="your-gcp-project-id"
 
-## Getting Started
+    # --- Browse AI Configuration ---
+    BROWSE_AI_API_KEY="your-browse-ai-api-key"
+    WATCHCHARTS_ROBOT_ID="your-watchcharts-robot-id"
+    LIV_EX_ROBOT_ID="your-liv-ex-robot-id"
+    CHARTERAPI_ROBOT_ID="your-charterapi-robot-id"
 
-1.  **Locate the Files:** The core files `project_config.md` and `workflow_state.md` are located within the `cursorkleosr/` directory.
-2.  **Fill `project_config.md`:** Add your project's specific goals, tech stack, key patterns, constraints, and tokenization settings.
-3.  **Instruct the AI:** Start your Cursor chat with a clear system prompt instructing the AI to operate *exclusively* based on these two files and the autonomous loop described above. (A good system prompt is crucial for enforcement!).
-    *   *Example Snippet for System Prompt:* "You are an autonomous AI developer. Operate solely based on `project_config.md` and `workflow_state.md`. Before every action, read `workflow_state.md`, determine state, consult `## Rules`, act accordingly, then immediately update `workflow_state.md`."
-4.  **Give the First Task:** The AI will initialize based on `RULE_INIT_01` and ask for the first task.
+    # --- Local Postgres (for docker-compose) ---
+    POSTGRES_USER="calif_user"
+    POSTGRES_PASSWORD="a_strong_password"
+    POSTGRES_DB="calif"
+    # This is the connection URL your services will use to connect to the docker-compose Postgres instance
+    POSTGRES_DB_URL="postgresql+psycopg2://calif_user:a_strong_password@postgres:5432/calif"
 
-## What about `.cursorrules`?
+    # --- Local pgAdmin (for docker-compose) ---
+    PGADMIN_DEFAULT_EMAIL="admin@example.com"
+    PGADMIN_DEFAULT_PASSWORD="admin"
 
-The main `.cursorrules` file is now less important for the workflow itself. You might still use it for global Cursor settings (like preferred AI models or global ignores), but the core logic resides in `workflow_state.md`.
+    # --- Slack Configuration ---
+    SLACK_BOT_TOKEN="your-slack-bot-token"
+    SLACK_CHANNEL="#your-channel"
+    ```
 
-## License
+4.  **Launch the services:**
+    A `Makefile` is provided for convenience.
+    ```bash
+    make dev
+    ```
+    This command will build and run all the services defined in `docker-compose.yml`.
 
-This project concept is licensed under the MIT License - see the LICENSE file for details.
+    Your services will be available at:
+    *   **API**: `http://localhost:8000`
+    *   **API Docs**: `http://localhost:8000/docs`
+    *   **Dashboard**: `http://localhost:8501`
+    *   **pgAdmin**: `http://localhost:5050`
 
-## Contributing
+## ☁️ CI/CD Flow
 
-Feel free to adapt and improve this system. Share your experiences and refinements!
+This project uses Google Cloud Build for continuous integration and deployment. The pipeline is defined in `cloudbuild.yaml`.
 
-## Blueprint History System
-The workflow now includes automatic blueprint versioning to prevent loss of planning work:
+*   **Trigger**: A push to the `main` branch on GitHub.
+*   **Pipeline**:
+    1.  **Build**: Docker images for the `api`, `analytics`, and `slack_bot` services are built.
+    2.  **Push**: The newly built images are pushed to Google Artifact Registry.
+    3.  **Deploy**:
+        *   The `calif-api` Cloud Run service is updated with the latest API image.
+        *   The `calif-analytics` and `calif-slack-bot` Cloud Functions are updated with their respective new images.
 
-- **Automatic Archiving:** When creating new blueprints, existing plans are automatically archived to `## Blueprint History` with timestamps and unique IDs
-- **Version Control:** Maintains complete history of all blueprint iterations without overwriting previous work
-- **Easy Reference:** Use natural language commands like `"use blueprint from [date]"` or `"show blueprint [ID]"` to retrieve previous planning work
-- **Non-Destructive:** Original workflow structure remains intact while providing comprehensive blueprint history
+##  Terraform Deployment
 
-### Blueprint History Commands
-- `"Show blueprint from yesterday"` - Retrieve blueprint by date
-- `"Use blueprint abc123def"` - Restore specific blueprint by ID
-- `"List all previous blueprints"` - Display available blueprint history
+The entire GCP infrastructure for this project is managed with Terraform.
 
-## Git Workflow Integration
-This workflow now includes a simple, AI-assisted Git integration to encourage consistent version control. After a successful task, the AI will prompt to commit the changes, log the commit SHA to `workflow_state.md`, and allow for simple rollbacks or diffs using natural language.
+1.  **Install Terraform**: Ensure you have Terraform (>=1.7) installed.
+
+2.  **Authenticate with GCP**:
+    ```bash
+    gcloud auth application-default login
+    ```
+
+3.  **Create a `terraform.tfvars` file**:
+    In the `terraform/` directory, create a file named `terraform.tfvars` and populate it with your sensitive variables.
+    ```tf
+    gcp_project_id    = "your-gcp-project-id"
+    slack_bot_token   = "your-slack-bot-token"
+    browse_ai_api_key = "your-browse-ai-api-key"
+    postgres_db_url   = "your-production-postgres-url"
+    ```
+
+4.  **Initialize and Apply**:
+    Navigate to the Terraform directory and run the following commands:
+    ```bash
+    cd terraform
+    terraform init
+    terraform plan
+    terraform apply
+    ```
+
+##  API Reference
+
+### GET `/signals`
+
+Returns a list of all active deal signals.
+
+*   **Response `200 OK`**
+    ```json
+    [
+      {
+        "asset_type": "watch",
+        "last_price": 8000,
+        "rolling_mean_30d": 125.86,
+        "z_score": -2.5,
+        "is_deal": true,
+        "updated_at": "2023-10-27T10:00:00Z"
+      }
+    ]
+    ```
+
+### GET `/index`
+
+Returns a list of computed market indices. (Placeholder)
+
+*   **Response `200 OK`**
+    ```json
+    [
+      {
+        "name": "WatchIndex",
+        "value": 1234.56,
+        "updated_at": "2023-10-27T10:00:00Z"
+      }
+    ]
+    ```
+
+##  slack Alert Payload
+
+When a new deal is identified, a notification is sent to the configured Slack channel with the following format:
+
+> **New Deal Signal: Watch**
+> *Asset Type*: Watch
+> *Current Price*: $8,000.00
+> *30-Day Avg Price*: $125.86
+> *Z-Score*: -2.50
